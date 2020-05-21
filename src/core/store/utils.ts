@@ -1,3 +1,13 @@
+export function compose(...funcs: Array<(...args: any[]) => any>) {
+  if (funcs.length === 0) {
+    return (arg: any) => arg;
+  }
+  if (funcs.length === 1) {
+    return funcs[0];
+  }
+  return funcs.reduce((a, b) => (...args) => a(b(...args)));
+}
+
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 function is(x: any, y: any) {

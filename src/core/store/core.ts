@@ -1,6 +1,24 @@
 import { Actor, TKeyCreator } from "./actor";
-import { Subject, BehaviorSubject } from "rxjs";
-import { shallowEqual } from "./utils";
+import { Subject, BehaviorSubject, Observable } from "rxjs";
+import { compose, shallowEqual } from "./utils";
+
+export interface IDispatch {
+  (actor: Actor): Actor;
+}
+
+export interface IMiddlewareAPI<TState = any> {
+  dispatch(actor: Actor<TState>): Actor<TState>;
+
+  getState(): TState;
+}
+
+export interface IMiddleware<TState = any> {
+  (api: IMiddlewareAPI<TState>): (next: IDispatch) => IDispatch;
+}
+
+export interface IEpic<TState = any> {
+  (actor$: Observable<Actor>, so$: Store<TState>): Observable<Actor>;
+}
 
 export class Store<TRoot extends { [key: string]: any } = {}> extends BehaviorSubject<TRoot> {
   static create<TState>(initialState: TState = {} as TState) {
@@ -9,21 +27,21 @@ export class Store<TRoot extends { [key: string]: any } = {}> extends BehaviorSu
 
   actor$ = new Subject<Actor>();
 
-  // applyMiddleware(...middlewares: IMiddleware<TRoot>[]) {
-  //   if (middlewares.length === 0) {
-  //     return;
-  //   }
-  //   const chain = middlewares.map((middleware) => middleware(this));
-  //   this.dispatch = compose(...chain)(this._dispatch);
-  // }
-  //
-  // epicOn(epic: IEpic<TRoot>) {
-  //   return epic(this.actor$, this).subscribe((actor) => {
-  //     if (actor) {
-  //       this.dispatch(actor);
-  //     }
-  //   });
-  // }
+  applyMiddleware(...middlewares: IMiddleware<TRoot>[]) {
+    if (middlewares.length === 0) {
+      return;
+    }
+    const chain = middlewares.map((middleware) => middleware(this));
+    this.dispatch = compose(...chain)(this._dispatch);
+  }
+
+  epicOn(epic: IEpic<TRoot>) {
+    return epic(this.actor$, this).subscribe((actor) => {
+      if (actor) {
+        this.dispatch(actor);
+      }
+    });
+  }
 
   dispatch = (actor: Actor) => {
     return this._dispatch(actor);
