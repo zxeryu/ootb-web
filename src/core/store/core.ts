@@ -20,6 +20,14 @@ export interface IEpic<TState = any> {
   (actor$: Observable<Actor>, so$: Store<TState>): Observable<Actor>;
 }
 
+export function composeEpics(...epics: Array<IEpic<any>>): IEpic<any> {
+  return (actor$: Observable<Actor>, so$: Store): Observable<Actor> => {
+    return epics.reduce((preActor$, epic) => {
+      return epic(preActor$, so$) as any;
+    }, actor$);
+  };
+}
+
 export class Store<TRoot extends { [key: string]: any } = {}> extends BehaviorSubject<TRoot> {
   static create<TState>(initialState: TState = {} as TState) {
     return new Store<TState>(initialState);

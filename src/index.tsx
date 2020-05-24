@@ -3,15 +3,7 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
 import * as serviceWorker from "./serviceWorker";
-import { StoreProvider } from "./core/store/ctx";
-import { Store } from "./core/store";
-
-// ReactDOM.render(
-//   <React.StrictMode>
-//     <App />
-//   </React.StrictMode>,
-//   document.getElementById("root"),
-// );
+import { StoreProvider, Store } from "./core/store";
 
 const store$ = Store.create({ name: "zx", age: 18 });
 
