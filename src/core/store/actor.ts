@@ -115,8 +115,8 @@ export class AsyncActor<TArg = any, TOpts = any, TAsyncDerived extends IAsyncDer
   TArg,
   TOpts
 > {
-  static of<TArg = any, TOpts = any, TAsyncDerived extends IAsyncDerived = IAsyncDerived>(group: string): AsyncActor {
-    return new AsyncActor<TArg, TOpts, IAsyncDerived>({ group });
+  static of<TArg = any, TOpts = any, TAsyncDerived extends IAsyncDerived = IAsyncDerived>(group: string) {
+    return new AsyncActor<TArg, TOpts, TAsyncDerived>({ group });
   }
 
   named<TNamedArg = TArg, TNamedOpts = TOpts, TNamedAsyncDerived extends IAsyncDerived = TAsyncDerived>(

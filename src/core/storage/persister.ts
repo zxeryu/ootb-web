@@ -1,5 +1,5 @@
 import { Store } from "../store";
-import { createInstance, LOCALSTORAGE } from "localforage";
+import { createInstance } from "localforage";
 import { filter, isNull, isUndefined, keys, map, uniq } from "lodash";
 import { fromEvent, merge } from "rxjs";
 import { tap } from "rxjs/operators";

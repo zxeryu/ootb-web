@@ -1,14 +1,14 @@
 import React from "react";
-import { Actor, useConn, useStore, useStoreSelector } from "../core/store";
+import { Actor, useStore, useStoreSelector } from "../core/store";
 import { get } from "lodash";
 
 const countActor = Actor.of("count");
 
-const increment = countActor.named("increment").effectOn("count", (state = 0, actor) => {
+const increment = countActor.named("increment").effectOn("count", (state = 0) => {
   return state + 1;
 });
 
-const decrement = countActor.named("decrement").effectOn("count", (state = 0, actor) => {
+const decrement = countActor.named("decrement").effectOn("count", (state = 0) => {
   return state - 1;
 });
 
