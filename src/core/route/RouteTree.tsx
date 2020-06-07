@@ -1,288 +1,174 @@
-import React, { ComponentType, lazy, Suspense, Fragment, createContext, useContext } from "react";
-import { assign, startsWith } from "lodash";
-import { Redirect, Switch, Route } from "react-router-dom";
-import { IRouteProps, IRouterContext } from "./ctx";
+import React, {
+  ReactNode,
+  FunctionComponent,
+  useMemo,
+  ReactElement,
+  createElement,
+  cloneElement,
+  ComponentType,
+  lazy,
+  Suspense,
+} from "react";
+import { startsWith, forEach, map, assign, get, isFunction, concat } from "lodash";
+import { Switch, Route } from "react-router-dom";
 
-export interface IRouteTree {
-  exact?: boolean;
-  pathname?: string;
-
-  before?: ComponentType<any> | null;
-  icon?: ComponentType<any>;
-  title?: ComponentType<any>;
-  main?: ComponentType<any>;
-
-  parent?: RouteTree;
-  routes?: RouteTree[];
-
-  state?: { [k: string]: any };
+export interface IRouteMeta {
+  fullPath?: string;
+  index?: boolean;
+  path?: string;
+  title?: ReactNode;
+  icon?: ReactNode;
+  content?: ReactNode;
+  render?: FunctionComponent<{ children: ReactNode }>;
+  parent?: RouteMeta;
+  children?: Array<RouteMeta>;
 }
 
-export class RouteTree implements IRouteTree {
-  exact: boolean | undefined;
-  pathname: string | undefined;
+export class RouteMeta implements IRouteMeta {
+  children: Array<RouteMeta> | undefined;
+  content: React.ReactNode;
+  fullPath: string | undefined;
+  icon: React.ReactNode;
+  index: boolean | undefined;
+  parent: RouteMeta | undefined;
+  path: string | undefined;
+  render:
+    | React.FunctionComponent<{
+        children: React.ReactNode;
+      }>
+    | undefined;
+  title: React.ReactNode;
 
-  routes: RouteTree[];
-  parent: RouteTree | undefined;
-
-  state?: { [k: string]: any } = {};
-
-  before?: ComponentType<any> | null;
-
-  icon?: ComponentType<any>;
-  title?: ComponentType<any>;
-  main?: ComponentType<any>;
-
-  static createTitle = (title: any) => () => <span>{title}</span>;
-
-  static createRedirect = (to: string) =>
-    assign(
-      ({ match }: IRouterContext<any>) => {
-        return <Redirect to={startsWith(to, "/") ? to : `${match.url}/${to}`} />;
-      },
-      {
-        assistant: true,
-      },
-    );
-
-  static createElement(Comp?: ComponentType, props?: object) {
-    if (Comp) {
-      return <Comp {...props} />;
-    }
-    return null;
-  }
-
-  static path = (p: string, exact = false) =>
-    new RouteTree({
-      pathname: p,
-      exact,
-    });
-
-  static index = (exact = true) =>
-    new RouteTree({
-      exact,
-    });
-
-  constructor(route: IRouteTree) {
-    this.pathname = route.pathname;
-    this.exact = route.exact;
-    this.before = route.before;
-    this.title = route.title;
+  constructor(route: IRouteMeta) {
+    this.content = route.content;
+    this.fullPath = route.fullPath;
     this.icon = route.icon;
-    this.main = route.main;
-
+    this.title = route.title;
+    this.path = route.path;
+    this.render = route.render;
     this.parent = route.parent;
-    this.routes = (route.routes || []).map((subRouteTree) => subRouteTree.setParent(this));
-
-    this.state = route.state;
+    this.index = route.index;
+    this.children = map(route.children, (subRoute: RouteMeta) => subRoute.setParent(this));
   }
 
-  private set(key: keyof RouteTree, value: any) {
-    return new RouteTree(assign({}, this, { [key]: value }));
+  private set(key: keyof RouteMeta, value: any) {
+    return new RouteMeta(assign({}, this, { [key]: value }));
   }
 
-  private setParent(route: RouteTree) {
+  private setParent(route: RouteMeta) {
     return this.set("parent", route);
   }
 
-  withRoutes(...routes: RouteTree[]) {
-    return this.set("routes", this.routes.concat(...routes));
-  }
-
-  withComp(Comp: ComponentType<any>) {
-    return this.set("main", Comp);
-  }
-
-  withState(state: { [k: string]: any }) {
-    return this.set("state", state);
-  }
-
-  withDynamic(loadComp: () => Promise<{ default: ComponentType<any> }>, fallback = <></>) {
-    const Comp = lazy(loadComp);
-
-    return this.set(
-      "main",
-      assign(
-        (props: any) => (
-          <Suspense fallback={fallback}>
-            <Comp {...props} />
-          </Suspense>
-        ),
-        {
-          resolveShouldRender: () =>
-            loadComp().then((m: any) => {
-              if (m.default.resolveShouldRender) {
-                return m.default.resolveShouldRender();
-              }
-              return () => true;
-            }),
-        },
-      ),
-    );
-  }
-
-  withTitle(Comp: string | ComponentType<any>) {
-    return this.set("title", typeof Comp === "string" ? RouteTree.createTitle(Comp) : Comp);
-  }
-
-  withIcon(Icon: ComponentType<any>) {
-    return this.set("icon", Icon);
-  }
-
-  persistentShouldRender(render: ComponentType<any>) {
-    return this.set(
-      "before",
-      assign(render, {
-        persistent: true,
-      }),
-    );
-  }
-
-  shouldRender(render: ComponentType<any>) {
-    return this.set("before", render);
-  }
-
-  get Component() {
-    return this.main;
-  }
-
-  get Title() {
-    return this.title;
-  }
-
-  get Icon() {
-    return this.icon;
-  }
-
-  get ShouldRender() {
-    if (typeof this.before === "undefined") {
-      const parents = this.parents();
-
-      let n = parents.length;
-
-      this.before = null;
-
-      while (n--) {
-        const p = parents[n];
-
-        if (p.before && (p.before as any).persistent) {
-          this.before = p.before;
-          break;
-        }
-      }
+  with(props: { index?: boolean; title?: string | ReactNode; icon?: ReactNode; path?: string; fullPath?: string }) {
+    let routeMeta: RouteMeta | undefined;
+    //convert title to ReactNode while is string
+    if (props.title && typeof props.title === "string") {
+      props.title = <span>{props.title}</span>;
     }
-
-    return this.before;
+    for (const key in props) {
+      routeMeta = this.set(key as any, get(props, key));
+    }
+    return routeMeta || this;
   }
 
-  render(render: () => JSX.Element | null, key?: any): JSX.Element | null {
-    if (this.ShouldRender) {
-      const ShouldRender = this.ShouldRender;
-
-      return (
-        <ShouldRender key={key} route={this}>
-          {render()}
-        </ShouldRender>
-      );
-    }
-
-    return <Fragment key={key}>{render()}</Fragment>;
+  withContent(content: (() => Promise<{ default: ComponentType<any> }>) | ReactNode) {
+    return this.set("content", isFunction(content) ? load(content) : content);
   }
 
-  parents() {
-    const parents: RouteTree[] = [];
-
-    let parent = this.parent;
-
-    while (parent) {
-      parents.unshift(parent);
-      parent = parent.parent;
-    }
-
-    return parents;
+  shouldRender(render: IRouteMeta["render"]) {
+    return this.set("render", render);
   }
 
-  get path(): string {
-    let pathname = this.pathname;
-    let parent = this.parent;
+  withChildren(children: IRouteMeta["children"]) {
+    return this.set("children", concat(this.children, children));
+  }
+}
 
-    if (!pathname) {
-      if (parent) {
-        return parent.path;
-      }
-      return "";
-    }
+export const load = <T extends ComponentType>(factory: () => Promise<{ default: T }>, fallback = <></>) => {
+  const Comp = lazy(factory);
 
-    if (pathname === "*") {
-      return "(.*)";
-    }
+  const Dynamic = (props: any) => (
+    <Suspense fallback={fallback}>
+      <Comp {...props} />
+    </Suspense>
+  );
 
-    if (startsWith(pathname, "/")) {
-      return pathname;
-    }
+  return <Dynamic />;
+};
 
-    while (parent && !pathname.startsWith("/")) {
-      const parentPathname = parent.path;
-      pathname = parentPathname ? `${parentPathname === "/" ? "" : parentPathname}/${pathname}` : pathname;
-      parent = parent.parent;
-    }
+const resolveFullPath = (pathname?: string, parentPathname = "/") => {
+  if (!pathname) {
+    return parentPathname;
+  }
 
+  if (pathname === "*") {
+    return "(.*)";
+  }
+
+  if (startsWith(pathname, "/")) {
     return pathname;
   }
 
-  get AvailableTitle(): ComponentType<any> {
-    let parent = this.parent;
-    let title: ComponentType<any> | undefined = this.Title;
+  return `${parentPathname === "/" ? "" : parentPathname}/${pathname}`;
+};
 
-    while (parent && !title) {
-      title = parent.Title;
-      parent = parent.parent;
-    }
+export const isVirtualRoute = (routeMeta: IRouteMeta) => {
+  return !routeMeta.path && !routeMeta.index;
+};
 
-    if (!title) {
-      return function NoTitle() {
-        return <span />;
-      };
-    }
+const defaultRender = ({ children }: { children: ReactNode }) => <>{children}</>;
 
-    return title;
-  }
-}
-
-export interface ISwitchByRouteProps {
-  route: RouteTree;
-}
-
-export interface IRouteEnhanceProps extends IRouteProps, ISwitchByRouteProps {
-  defaultComponent?: React.ComponentType;
-}
-
-export const SwitchByRoute = ({ route }: ISwitchByRouteProps): JSX.Element => {
+export const RouteRender = ({ route, parent }: { route: IRouteMeta; parent: IRouteMeta }) => {
+  const { render: persistentRender } = parent;
   return (
-    <Switch>
-      {route.routes.map((subRoute: RouteTree, idx: number) => {
-        return <RouteEnhance key={idx} route={subRoute} exact={subRoute.exact} path={subRoute.path} />;
+    <>
+      {createElement(route.render || persistentRender || defaultRender, {
+        children: route.content || <SwitchRoutes route={route} />,
       })}
-    </Switch>
+    </>
   );
 };
 
-const MatchedRouteContext = createContext({ route: null } as { route: RouteTree | null });
+export const EachRoutes = ({ route, children }: { route: IRouteMeta; children: (route: IRouteMeta) => ReactNode }) => {
+  const routes = useMemo(() => {
+    const routes: Array<ReactElement<IRouteMeta>> = [];
+    forEach(route.children, (e) => {
+      //设置fullPath
+      !e.fullPath && (e.fullPath = resolveFullPath(e.path || "", route.fullPath));
+      const r = cloneElement(<RouteRender route={e} parent={route} />, {
+        content: children(e),
+      });
+      routes.push(r);
+    });
+    return routes;
+  }, route.children);
+  return <>{routes}</>;
+};
 
-export const MatchedRouteProvider = MatchedRouteContext.Provider;
+//switch RouteTree to <Route/>
+export const SwitchRoutes = ({ route }: { route: IRouteMeta }) => {
+  const routes = useMemo(() => {
+    const resolveChildren = (route: IRouteMeta) => {
+      const routes: Array<ReactElement<IRouteMeta>> = [];
+      const virtualRoutes: Array<ReactElement<IRouteMeta>> = [];
 
-export function useMatchedRoute() {
-  return useContext(MatchedRouteContext).route!;
-}
+      forEach(route.children, (e: IRouteMeta) => {
+        if (isVirtualRoute(e)) {
+          routes.push(...resolveChildren(e));
+        } else {
+          //设置fullPath
+          !e.fullPath && (e.fullPath = resolveFullPath(e.path || "", route.fullPath));
+          routes.push(
+            <Route path={e.fullPath} exact={e.index}>
+              <RouteRender route={e} parent={route} />
+            </Route>,
+          );
+        }
+      });
+      return [...routes, ...virtualRoutes];
+    };
+    return resolveChildren(route);
+  }, route.children);
 
-export function RouteEnhance(props: IRouteEnhanceProps) {
-  const { route, defaultComponent = SwitchByRoute } = props;
-
-  const Comp = route.Component || defaultComponent;
-
-  return (
-    <MatchedRouteContext.Provider value={{ route: route }}>
-      <Route {...props} render={(props) => route.render(() => <Comp {...props} route={route} />)} />
-    </MatchedRouteContext.Provider>
-  );
-}
+  return <Switch>{routes}</Switch>;
+};
