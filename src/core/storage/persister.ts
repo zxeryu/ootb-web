@@ -1,5 +1,5 @@
 import { Store } from "../store";
-import { createInstance } from "localforage";
+import { createInstance, LOCALSTORAGE } from "localforage";
 import { filter, isNull, isUndefined, keys, map, uniq } from "lodash";
 import { fromEvent, merge } from "rxjs";
 import { tap } from "rxjs/operators";
@@ -8,6 +8,14 @@ import { tap } from "rxjs/operators";
 // $$access need persist and crossTabs
 const isPersist = (key = "") => {
   return [key.startsWith("$"), key[1] === "$"] as const;
+};
+
+export const createPersister = (opts: LocalForageOptions) => {
+  return new Persister({
+    driver: LOCALSTORAGE,
+    ...opts,
+    name: opts.name || "app",
+  });
 };
 
 export class Persister {

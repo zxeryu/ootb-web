@@ -1,6 +1,6 @@
 import React from "react";
-import { Counter } from "./app/Counter";
-import { Age } from "./app/Age";
+import { Counter } from "./Counter";
+import { Age } from "./Age";
 
 function App() {
   return (
