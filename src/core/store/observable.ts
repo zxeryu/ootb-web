@@ -1,8 +1,25 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Observable } from "rxjs";
+import { useEffect, useMemo, useState } from "react";
+import { merge, Observable } from "rxjs";
 import { distinctUntilChanged, map } from "rxjs/operators";
 import { shallowEqual } from "./utils";
 import { useStore } from "./ctx";
+
+export type ArrayOrNone<T> = T | T[] | undefined;
+
+export const useObservableEffect = (effect: () => ArrayOrNone<Observable<any>>, deps: any[] = []) => {
+  useEffect(() => {
+    const ob = effect();
+    if (!ob) {
+      return;
+    }
+
+    const sub = merge(...([] as Array<Observable<any>>).concat(ob)).subscribe();
+
+    return () => {
+      sub.unsubscribe();
+    };
+  }, deps);
+};
 
 export function useObservable<T>(ob$: Observable<T>, defaultValue?: T): T {
   const [value, setValue] = useState(() => defaultValue || (ob$ as any).value);
