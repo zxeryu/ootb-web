@@ -8,8 +8,9 @@ import React, {
   ComponentType,
   lazy,
   Suspense,
+  Children,
 } from "react";
-import { startsWith, forEach, map, assign, get, isFunction, concat } from "lodash";
+import { startsWith, forEach, map, assign, isFunction, concat } from "lodash";
 import { Switch, Route } from "react-router-dom";
 
 export interface IRouteMeta {
@@ -39,6 +40,20 @@ export class RouteMeta implements IRouteMeta {
     | undefined;
   title: React.ReactNode;
 
+  static with(props: {
+    index?: boolean;
+    title?: string | ReactNode;
+    icon?: ReactNode;
+    path?: string;
+    fullPath?: string;
+  }) {
+    if (props.title && typeof props.title === "string") {
+      props.title = <span>{props.title}</span>;
+    }
+    const { index, title, icon, path, fullPath } = props;
+    return new RouteMeta({ index, title, icon, path, fullPath });
+  }
+
   constructor(route: IRouteMeta) {
     this.content = route.content;
     this.fullPath = route.fullPath;
@@ -59,18 +74,6 @@ export class RouteMeta implements IRouteMeta {
     return this.set("parent", route);
   }
 
-  with(props: { index?: boolean; title?: string | ReactNode; icon?: ReactNode; path?: string; fullPath?: string }) {
-    let routeMeta: RouteMeta | undefined;
-    //convert title to ReactNode while is string
-    if (props.title && typeof props.title === "string") {
-      props.title = <span>{props.title}</span>;
-    }
-    for (const key in props) {
-      routeMeta = this.set(key as any, get(props, key));
-    }
-    return routeMeta || this;
-  }
-
   withContent(content: (() => Promise<{ default: ComponentType<any> }>) | ReactNode) {
     return this.set("content", isFunction(content) ? load(content) : content);
   }
@@ -79,8 +82,8 @@ export class RouteMeta implements IRouteMeta {
     return this.set("render", render);
   }
 
-  withChildren(children: IRouteMeta["children"]) {
-    return this.set("children", concat(this.children, children));
+  withChildren(...routes: IRouteMeta[]) {
+    return this.set("children", concat(this.children, routes));
   }
 }
 
@@ -167,7 +170,7 @@ export const SwitchRoutes = ({ route }: { route: IRouteMeta }) => {
       });
       return [...routes, ...virtualRoutes];
     };
-    return resolveChildren(route);
+    return Children.toArray(resolveChildren(route));
   }, route.children);
 
   return <Switch>{routes}</Switch>;
