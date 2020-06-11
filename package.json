@@ -27,9 +27,9 @@
     "typescript": "~3.7.2"
   },
   "scripts": {
-    "start": "react-app-rewired start",
-    "build": "react-app-rewired build",
-    "test": "react-app-rewired test"
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -49,14 +49,13 @@
   "devDependencies": {
     "@commitlint/cli": "^8.3.5",
     "@commitlint/config-conventional": "^8.3.4",
+    "@craco/craco": "^5.6.4",
     "@emotion/babel-preset-css-prop": "^10.0.27",
     "babel-plugin-emotion": "^10.0.33",
-    "customize-cra": "^0.9.1",
     "husky": "^4.2.5",
     "lint-staged": "^10.2.2",
     "prettier": "^2.0.5",
-    "pretty-quick": "^2.0.1",
-    "react-app-rewired": "^2.1.6"
+    "pretty-quick": "^2.0.1"
   },
   "husky": {
     "hooks": {
