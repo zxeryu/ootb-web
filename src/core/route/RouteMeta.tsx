@@ -4,13 +4,12 @@ import React, {
   useMemo,
   ReactElement,
   createElement,
-  cloneElement,
   ComponentType,
   lazy,
   Suspense,
   Children,
 } from "react";
-import { startsWith, forEach, map, assign, isFunction, concat } from "lodash";
+import { startsWith, forEach, map, assign, concat } from "lodash";
 import { Switch, Route } from "react-router-dom";
 
 export interface IRouteMeta {
@@ -19,7 +18,7 @@ export interface IRouteMeta {
   path?: string;
   title?: ReactNode;
   icon?: ReactNode;
-  content?: ReactNode;
+  content?: ComponentType<any>;
   render?: FunctionComponent<{ children: ReactNode }>;
   parent?: RouteMeta;
   children?: Array<RouteMeta>;
@@ -27,7 +26,7 @@ export interface IRouteMeta {
 
 export class RouteMeta implements IRouteMeta {
   children: Array<RouteMeta> | undefined;
-  content: React.ReactNode;
+  content: ComponentType<any> | undefined;
   fullPath: string | undefined;
   icon: React.ReactNode;
   index: boolean | undefined;
@@ -74,8 +73,12 @@ export class RouteMeta implements IRouteMeta {
     return this.set("parent", route);
   }
 
-  withContent(content: (() => Promise<{ default: ComponentType<any> }>) | ReactNode) {
-    return this.set("content", isFunction(content) ? load(content) : content);
+  withContent(content: ComponentType<any>) {
+    return this.set("content", content);
+  }
+
+  withDynamic(content: () => Promise<{ default: ComponentType<any> }>) {
+    return this.set("content", load(content));
   }
 
   shouldRender(render: IRouteMeta["render"]) {
@@ -96,7 +99,7 @@ export const load = <T extends ComponentType>(factory: () => Promise<{ default: 
     </Suspense>
   );
 
-  return <Dynamic />;
+  return Dynamic;
 };
 
 const resolveFullPath = (pathname?: string, parentPathname = "/") => {
@@ -123,10 +126,11 @@ const defaultRender = ({ children }: { children: ReactNode }) => <>{children}</>
 
 export const RouteRender = ({ route, parent }: { route: IRouteMeta; parent: IRouteMeta }) => {
   const { render: persistentRender } = parent;
+  const Comp = route.content || SwitchRoutes;
   return (
     <>
       {createElement(route.render || persistentRender || defaultRender, {
-        children: route.content || <SwitchRoutes route={route} />,
+        children: <Comp route={route} />,
       })}
     </>
   );
@@ -134,12 +138,16 @@ export const RouteRender = ({ route, parent }: { route: IRouteMeta; parent: IRou
 
 export const EachRoutes = ({ route, children }: { route: IRouteMeta; children: (route: IRouteMeta) => ReactNode }) => {
   const routes = useMemo(() => {
-    const routes: Array<ReactElement<IRouteMeta>> = [];
+    const routes: Array<ReactElement<any>> = [];
     forEach(route.children, (e) => {
       //设置fullPath
       !e.fullPath && (e.fullPath = resolveFullPath(e.path || "", route.fullPath));
-      const r = cloneElement(<RouteRender route={e} parent={route} />, {
-        content: children(e),
+      // const r = cloneElement(<RouteRender route={e} parent={route} />, {
+      //   content: children(e),
+      // });
+      const r = createElement(e.render || route.render || defaultRender, {
+        children: children(e),
+        key: e.path,
       });
       routes.push(r);
     });

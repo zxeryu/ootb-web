@@ -1,5 +1,5 @@
 import React from "react";
-import { Actor, useStore, useStoreSelector } from "../core/store";
+import { Actor, useStore, useStoreSelector } from "../../core/store";
 import { get } from "lodash";
 
 const countActor = Actor.of("count");

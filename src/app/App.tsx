@@ -1,18 +1,17 @@
 import React from "react";
-import { Counter } from "./Counter";
-import { Age } from "./Age";
 import { RouteMeta, SwitchRoutes } from "../core/route";
 import { getSettingRoutes } from "./setting/routes";
+import { getOverviewRoutes } from "./overview/routes";
+import { BasicLayout } from "../component/layout/BasicLayout";
+import "antd/dist/antd.css";
 
-const root = RouteMeta.with({ fullPath: "/" }).withChildren(getSettingRoutes());
+const root = RouteMeta.with({ fullPath: "/" }).withChildren(getSettingRoutes(), getOverviewRoutes());
 
 function App() {
   return (
-    <div>
-      <Counter />
-      <Age />
+    <BasicLayout route={root}>
       <SwitchRoutes route={root} />
-    </div>
+    </BasicLayout>
   );
 }
 
