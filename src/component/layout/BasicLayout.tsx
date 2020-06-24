@@ -1,68 +1,40 @@
-import { Layout, Menu } from "antd";
-import React, { ReactNode } from "react";
-import { EachRoutes, IRouteMeta } from "../../core/route";
-import { EachMenus } from "../menu/EachMenus";
+import { Layout } from "antd";
+import React, { ReactNode, useState } from "react";
 const { Header, Footer, Sider, Content } = Layout;
 
-export enum ELayoutMode {
-  MenuLeft = "MenuLeft",
-  MenuTop = "MenuTop",
-  MenuTopSubLeft = "MenuTopSubLeft",
-}
-
-export type ILayoutMode = keyof typeof ELayoutMode;
-
-export interface IRouteChildren {
+export interface ILayoutProps {
   children?: ReactNode;
-  route: IRouteMeta;
+  nav?: ReactNode;
+  header?: ReactNode;
+  footer?: ReactNode;
 }
 
-// <Menu.SubMenu title={sub.title}>
-//   {console.log("###", sub)}
-//   <EachRoutes route={sub}>{(c) => <Menu.Item>{c.title}</Menu.Item>}</EachRoutes>
-// </Menu.SubMenu>
-
-export const MenuLeftLayout = ({ children, route }: IRouteChildren) => {
-  console.log("@@@@", route);
+export const NavLeftLayout = ({
+  children,
+  nav,
+  header,
+  height = "100vh",
+}: ILayoutProps & { height?: string | number }) => {
+  const [collapsed, setCollapsed] = useState<boolean>();
   return (
     <Layout>
-      <Sider>
-        <EachMenus route={route} />
+      <Sider css={{ height, overflow: "auto" }} collapsible collapsed={collapsed} onCollapse={setCollapsed}>
+        {nav}
       </Sider>
       <Layout>
-        <Header>Header</Header>
-        <Content>
-          Content
-          {children}
-        </Content>
-        <Footer>Footer</Footer>
+        {header && <Header>{header}</Header>}
+        <Content>{children}</Content>
       </Layout>
     </Layout>
   );
 };
 
-export const MenuTopLayout = ({ children }: IRouteChildren) => {
+export const NavTopLayout = ({ children, header, footer }: ILayoutProps) => {
   return (
     <Layout>
-      <Header>Header</Header>
-      <Content>
-        Content
-        {children}
-      </Content>
-      <Footer>Footer</Footer>
+      <header>{header}</header>
+      <Content>{children}</Content>
+      {footer && <Footer>{footer}</Footer>}
     </Layout>
   );
-};
-
-export const BasicLayout = ({
-  children,
-  mode = ELayoutMode.MenuLeft,
-  route,
-}: IRouteChildren & {
-  mode?: ILayoutMode;
-}) => {
-  if (mode === ELayoutMode.MenuTop || mode === ELayoutMode.MenuTopSubLeft) {
-    return <MenuTopLayout route={route}>{children}</MenuTopLayout>;
-  }
-  return <MenuLeftLayout route={route}>{children}</MenuLeftLayout>;
 };
