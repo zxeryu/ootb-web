@@ -18,7 +18,7 @@ export const EachMenus = ({ route }: { route: IRouteMeta }) => {
             </Menu.SubMenu>
           );
         }
-        return <Menu.Item key={sub.path}>{sub.fullPath && <NavLink to={sub.fullPath}>{sub.title}</NavLink>}</Menu.Item>;
+        return <Menu.Item key={sub.path}>{<NavLink to={sub.fullPath}>{sub.title}</NavLink>}</Menu.Item>;
       })}
     </Menu>
   );

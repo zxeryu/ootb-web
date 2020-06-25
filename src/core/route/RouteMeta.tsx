@@ -13,7 +13,6 @@ import { startsWith, forEach, map, assign, concat } from "lodash";
 import { Switch, Route } from "react-router-dom";
 
 export interface IRouteMeta {
-  fullPath?: string;
   index?: boolean;
   path?: string;
   title?: ReactNode;
@@ -27,7 +26,6 @@ export interface IRouteMeta {
 export class RouteMeta implements IRouteMeta {
   children: Array<RouteMeta> | undefined;
   content: ComponentType<any> | undefined;
-  fullPath: string | undefined;
   icon: React.ReactNode;
   index: boolean | undefined;
   parent: RouteMeta | undefined;
@@ -39,23 +37,16 @@ export class RouteMeta implements IRouteMeta {
     | undefined;
   title: React.ReactNode;
 
-  static with(props: {
-    index?: boolean;
-    title?: string | ReactNode;
-    icon?: ReactNode;
-    path?: string;
-    fullPath?: string;
-  }) {
+  static with(props: { index?: boolean; title?: string | ReactNode; icon?: ReactNode; path?: string }) {
     if (props.title && typeof props.title === "string") {
       props.title = <span>{props.title}</span>;
     }
-    const { index, title, icon, path, fullPath } = props;
-    return new RouteMeta({ index, title, icon, path, fullPath });
+    const { index, title, icon, path } = props;
+    return new RouteMeta({ index, title, icon, path });
   }
 
   constructor(route: IRouteMeta) {
     this.content = route.content;
-    this.fullPath = route.fullPath;
     this.icon = route.icon;
     this.title = route.title;
     this.path = route.path;
@@ -88,6 +79,29 @@ export class RouteMeta implements IRouteMeta {
   withChildren(...routes: IRouteMeta[]) {
     return this.set("children", concat(this.children, routes));
   }
+
+  get fullPath(): string {
+    let pathname = this.path;
+    let parent = this.parent;
+    if (!pathname) {
+      if (parent) {
+        return parent.fullPath;
+      }
+      return "";
+    }
+    if (pathname === "*") {
+      return "(.*)";
+    }
+    if (startsWith(pathname, "/")) {
+      return pathname;
+    }
+    while (parent && !pathname.startsWith("/")) {
+      const parentPathname = parent.path;
+      pathname = parentPathname ? `${parentPathname === "/" ? "" : parentPathname}/${pathname}` : pathname;
+      parent = parent.parent;
+    }
+    return pathname;
+  }
 }
 
 export const load = <T extends ComponentType>(factory: () => Promise<{ default: T }>, fallback = <></>) => {
@@ -102,29 +116,13 @@ export const load = <T extends ComponentType>(factory: () => Promise<{ default: 
   return Dynamic;
 };
 
-const resolveFullPath = (pathname?: string, parentPathname = "/") => {
-  if (!pathname) {
-    return parentPathname;
-  }
-
-  if (pathname === "*") {
-    return "(.*)";
-  }
-
-  if (startsWith(pathname, "/")) {
-    return pathname;
-  }
-
-  return `${parentPathname === "/" ? "" : parentPathname}/${pathname}`;
-};
-
 export const isVirtualRoute = (routeMeta: IRouteMeta) => {
   return !routeMeta.path && !routeMeta.index;
 };
 
 const defaultRender = ({ children }: { children: ReactNode }) => <>{children}</>;
 
-export const RouteRender = ({ route, parent }: { route: IRouteMeta; parent: IRouteMeta }) => {
+export const RouteRender = ({ route, parent }: { route: RouteMeta; parent: RouteMeta }) => {
   const { render: persistentRender } = parent;
   const Comp = route.content || SwitchRoutes;
   return (
@@ -140,8 +138,6 @@ export const EachRoutes = ({ route, children }: { route: IRouteMeta; children: (
   const routes = useMemo(() => {
     const routes: Array<ReactElement<any>> = [];
     forEach(route.children, (e) => {
-      //设置fullPath
-      !e.fullPath && (e.fullPath = resolveFullPath(e.path || "", route.fullPath));
       // const r = cloneElement(<RouteRender route={e} parent={route} />, {
       //   content: children(e),
       // });
@@ -157,18 +153,16 @@ export const EachRoutes = ({ route, children }: { route: IRouteMeta; children: (
 };
 
 //switch RouteTree to <Route/>
-export const SwitchRoutes = ({ route }: { route: IRouteMeta }) => {
+export const SwitchRoutes = ({ route }: { route: RouteMeta }) => {
   const routes = useMemo(() => {
-    const resolveChildren = (route: IRouteMeta) => {
+    const resolveChildren = (route: RouteMeta) => {
       const routes: Array<ReactElement<IRouteMeta>> = [];
       const virtualRoutes: Array<ReactElement<IRouteMeta>> = [];
 
-      forEach(route.children, (e: IRouteMeta) => {
+      forEach(route.children, (e: RouteMeta) => {
         if (isVirtualRoute(e)) {
           routes.push(...resolveChildren(e));
         } else {
-          //设置fullPath
-          !e.fullPath && (e.fullPath = resolveFullPath(e.path || "", route.fullPath));
           routes.push(
             <Route path={e.fullPath} exact={e.index}>
               <RouteRender route={e} parent={route} />

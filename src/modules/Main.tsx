@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { IRouteMeta, SwitchRoutes } from "../core/route";
+import { IRouteMeta, RouteMeta, SwitchRoutes } from "../core/route";
 import { map } from "lodash";
 import { NavLink } from "react-router-dom";
 import { Layout } from "antd";
@@ -13,11 +13,8 @@ export const MainHeader = ({ route }: { route: IRouteMeta }) => {
     <header>
       <div css={{ height: HeaderHeight }}>
         {map(route.children, (sub) => {
-          if (!sub.path) {
-            return null;
-          }
           return (
-            <NavLink to={sub.path}>
+            <NavLink key={sub.path} to={sub.fullPath}>
               <span key={sub.path}>{sub.title}</span>
             </NavLink>
           );
@@ -27,7 +24,7 @@ export const MainHeader = ({ route }: { route: IRouteMeta }) => {
   );
 };
 
-export const MainAdmin = ({ route }: { route: IRouteMeta }) => {
+export const MainAdmin = ({ route }: { route: RouteMeta }) => {
   const [collapsed, setCollapsed] = useState<boolean>();
   return (
     <Layout>
@@ -47,7 +44,7 @@ export const MainAdmin = ({ route }: { route: IRouteMeta }) => {
   );
 };
 
-export const Main = ({ route }: { route: IRouteMeta }) => {
+export const Main = ({ route }: { route: RouteMeta }) => {
   return (
     <Layout>
       <MainHeader route={route} />
