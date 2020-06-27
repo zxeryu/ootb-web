@@ -1,12 +1,17 @@
 import { Interpolation } from "@emotion/core";
 import { isEmpty, isFunction } from "lodash";
 import { CSSProperties } from "react";
+import { Theme } from "./Theme";
 
-const applyStyles = (...interpolations: Array<Interpolation>): Interpolation => {
+export type InterpolationBuilder = (t: Theme) => Interpolation;
+
+const applyStyles = (...interpolations: Array<InterpolationBuilder | Interpolation>) => (t: any): Interpolation => {
   const styles: Interpolation[] = [];
+
   for (const interpolation of interpolations) {
-    styles.push(isFunction(interpolation) ? interpolation() : interpolation);
+    styles.push(isFunction(interpolation) ? interpolation(t) : interpolation);
   }
+
   if (styles.length === 0) {
     return {};
   }
@@ -23,21 +28,21 @@ export interface BuilderProperties extends CSSProperties {
 }
 
 export type CSSBuilder = {
-  [k in keyof BuilderProperties]-?: (arg: (() => BuilderProperties[k]) | BuilderProperties[k]) => CSSBuilder;
+  [k in keyof BuilderProperties]-?: (arg: ((t: Theme) => BuilderProperties[k]) | BuilderProperties[k]) => CSSBuilder;
 } & {
-  (): Interpolation;
+  (t: Theme): Interpolation;
 };
 
 type StyleOrBuilderSet = {
-  [k: string]: any;
+  [k: string]: any | ((t: any) => any);
 };
 
-const buildStyle = (styleOrBuilders: StyleOrBuilderSet): Interpolation => {
+const buildStyle = (styleOrBuilders: StyleOrBuilderSet) => (t: any): Interpolation => {
   const styles = {} as any;
 
   for (const prop in styleOrBuilders) {
     const styleOrBuilder = styleOrBuilders[prop];
-    const value = styleOrBuilder;
+    const value = isFunction(styleOrBuilder) ? styleOrBuilder(t) : styleOrBuilder;
 
     styles[prop] = value;
   }
@@ -52,14 +57,14 @@ const createBuilder = (
   styleOrBuilders: StyleOrBuilderSet = {},
   interpolationOrBuilders: ReadonlyArray<Interpolation> = [],
 ) => {
-  const applyTheme = () => {
+  const applyTheme = (t: any) => {
     const n = selectors.length;
 
     const final = applyStyles(
       ...(isEmpty(styleOrBuilders)
         ? interpolationOrBuilders
         : [...interpolationOrBuilders, buildStyle(styleOrBuilders)]),
-    );
+    )(t);
 
     if (n === 0) {
       return final;
