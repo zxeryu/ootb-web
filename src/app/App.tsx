@@ -1,5 +1,5 @@
 import React from "react";
-import { RouteMeta, SwitchRoutes } from "../core/route";
+import { RouteMeta } from "../core/route";
 import { getSettingRoutes } from "./setting/routes";
 import { getOverviewRoutes } from "./overview/routes";
 import "antd/dist/antd.css";
