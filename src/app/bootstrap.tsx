@@ -3,11 +3,14 @@ import { conf } from "./config";
 import App from "./App";
 import React from "react";
 import { CSSPreset } from "./CSSPreset";
+import { ThemeProvider } from "../core/style/Theme";
 
 const SetUp = () => (
-  <CSSPreset>
-    <App />
-  </CSSPreset>
+  <ThemeProvider>
+    <CSSPreset>
+      <App />
+    </CSSPreset>
+  </ThemeProvider>
 );
 
 createBootstrap(conf())(() => <SetUp />, document.getElementById("root") as Element);
