@@ -6,6 +6,7 @@ import { Router } from "react-router-dom";
 import { BaseConfig, ConfigProvider } from "../config";
 import ReactDOM from "react-dom";
 import { isFunction } from "lodash";
+import { AxiosProvider, baseURLsFromConfig } from "../request";
 
 function PersisterConnect({ persister }: { persister: ReturnType<typeof createPersister> }) {
   const store$ = useStore();
@@ -39,8 +40,10 @@ export const createBootstrap = <T extends BaseConfig>(config: T) => (
       <StrictMode>
         <StoreProvider value={store$}>
           <ConfigProvider value={{ config }}>
-            <PersisterConnect persister={persister} />
-            <HistoryProvider>{isFunction(e) ? e() : e}</HistoryProvider>
+            <AxiosProvider baseURLs={baseURLsFromConfig(config)}>
+              <PersisterConnect persister={persister} />
+              <HistoryProvider>{isFunction(e) ? e() : e}</HistoryProvider>
+            </AxiosProvider>
           </ConfigProvider>
         </StoreProvider>
       </StrictMode>,

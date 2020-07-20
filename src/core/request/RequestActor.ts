@@ -14,10 +14,7 @@ export interface IRequestOpts<T = any> {
   data?: T;
 }
 
-export function createRequestActor<TReq, TResBody, IStatusError>(
-  name: string,
-  requestOptsFromReq: (arg: TReq) => IRequestOpts,
-) {
+export function createRequestActor<TReq, TResBody>(name: string, requestOptsFromReq: (arg: TReq) => IRequestOpts) {
   return new RequestActor<TReq, TResBody, IStatusError>({
     name,
     opts: {

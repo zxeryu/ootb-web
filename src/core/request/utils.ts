@@ -1,5 +1,5 @@
 import { stringify } from "querystring";
-import { forEach, isArray, isObject, Dictionary } from "lodash";
+import { forEach, isArray, isObject, Dictionary, startsWith } from "lodash";
 
 export const getProtocol = () => globalThis.location.protocol;
 
@@ -18,6 +18,19 @@ export const urlComplete = (baseURLs: Dictionary<string>) => (url = "/") => {
   }
   const firstPart = url.split("/")[1];
   return `${protocolPrefix(baseURLs[firstPart])}${url}`;
+};
+
+export const baseURLsFromConfig = (config: Dictionary<string>): Dictionary<string> => {
+  const baseURLs: Dictionary<string> = {};
+
+  forEach(config, (v, k) => {
+    if (startsWith(k, "SRV_")) {
+      const basePath = k.replace("SRV_", "").replace(/_/g, "-").toLowerCase();
+      baseURLs[basePath] = v;
+    }
+  });
+
+  return baseURLs;
 };
 
 export const isMultipartFormData = (contentType = "") => contentType.includes("multipart/form-data");
