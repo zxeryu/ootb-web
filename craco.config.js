@@ -1,5 +1,4 @@
-module.exports = {
-  babel: {
-    presets: ["@emotion/babel-preset-css-prop"],
-  },
-};
+require("ts-node").register({ compilerOptions: { module: "commonjs" } });
+const config = require("./tool/craco-config").default;
+
+module.exports = config;
