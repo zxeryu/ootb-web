@@ -8,6 +8,7 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "@types/cross-spawn": "^6.0.2",
     "@types/jest": "^24.0.0",
     "@types/lodash": "^4.14.150",
     "@types/node": "^12.0.0",
@@ -29,9 +30,12 @@
     "typescript": "~3.7.2"
   },
   "scripts": {
-    "start": "craco start",
-    "build": "craco build",
-    "test": "craco test"
+    "test": "craco test",
+    "devkit": "ts-node --skip-project -O {\\\"esModuleInterop\\\":true} tool/devkit.ts"
+  },
+  "devkit": {
+    "dev": "craco start",
+    "build": "craco build"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -54,10 +58,13 @@
     "@craco/craco": "^5.6.4",
     "@emotion/babel-preset-css-prop": "^10.0.27",
     "babel-plugin-emotion": "^10.0.33",
+    "cross-spawn": "^7.0.3",
     "husky": "^4.2.5",
     "lint-staged": "^10.2.2",
     "prettier": "^2.0.5",
-    "pretty-quick": "^2.0.1"
+    "pretty-quick": "^2.0.1",
+    "ts-node": "^8.10.2",
+    "yargs": "^15.4.1"
   },
   "husky": {
     "hooks": {

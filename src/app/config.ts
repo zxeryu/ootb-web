@@ -1,5 +1,3 @@
-import { confLoader } from "../core/config";
-
 export const ENVS = {
   STAGING: "staging",
   DEMO: "demo",
@@ -7,10 +5,16 @@ export const ENVS = {
   ONLINE: "online",
 };
 
-export const APP_CONFIG = {
-  TITLE: () => {
-    return "start";
-  },
+export const APP_MANIFEST = {
+  name: "nest-demo-web",
+  short_name: "zx",
 };
 
-export const conf = confLoader<keyof typeof APP_CONFIG>();
+export const APP_CONFIG = {
+  APP_NAME: () => {
+    return APP_MANIFEST.short_name;
+  },
+  ENV: (env: string) => {
+    return env.toLowerCase();
+  },
+};
