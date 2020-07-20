@@ -7,8 +7,10 @@ export const ENVS = {
 
 export const APP_MANIFEST = {
   name: "nest-demo-web",
-  short_name: "zx",
+  short_name: "app",
 };
+
+export const ALIAS = APP_MANIFEST.name;
 
 export const APP_CONFIG = {
   APP_NAME: () => {

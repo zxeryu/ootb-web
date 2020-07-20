@@ -2,12 +2,13 @@ import yargs from "yargs";
 import { exec } from "./util";
 import { join } from "path";
 import { existsSync, readFileSync } from "fs";
-import { isObject, has, take, keys, mapKeys, isEmpty, startsWith, mapValues, isFunction } from "lodash";
+import { isObject, has, take, keys, mapKeys, isEmpty, startsWith, mapValues, isFunction, get } from "lodash";
 
 export interface IState {
   cwd: string;
   context: string;
-  name: string;
+  name: string; //app目录名称
+  alias: string; //项目别名
   env: string;
   meta: { [key: string]: { [k: string]: string } };
 }
@@ -18,7 +19,7 @@ const loadConfig = (state: IState) => {
     return;
   }
 
-  // @ts-ignore
+  // require("ts-node/register");
   const config = require(configPath);
 
   const envs = mapKeys(config.ENVS, (key) => key.toLowerCase());
@@ -27,6 +28,11 @@ const loadConfig = (state: IState) => {
     console.warn(`[warning] missing env, use ${envKeys[0]} as default, or use one of ${envKeys.join(", ")}`);
     state.env = envKeys[0];
   }
+  const alias = get(config, "ALIAS", "");
+  if (alias) {
+    state.alias = alias;
+  }
+
   state.meta = {};
   for (const key in config) {
     if (has(config, key) && startsWith(key, "APP_")) {
@@ -74,6 +80,7 @@ const devkit = (cwd = process.cwd()) => {
         cwd,
         context: join(cwd, "src", app),
         name: app,
+        alias: app,
         env,
         meta: {},
       };
@@ -81,7 +88,6 @@ const devkit = (cwd = process.cwd()) => {
       loadConfig(state);
 
       // console.log(actions[action], state);
-
       exec(actions[action], state);
     },
   };

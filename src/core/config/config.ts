@@ -9,15 +9,15 @@ export const ConfigProvider = ConfigContext.Provider;
 export const useConfig = <T extends BaseConfig>(): T => useContext(ConfigContext).config || {};
 
 const getDevKitValue = (key: string) => {
-  return globalThis.document?.querySelector(`meta[name="devkit:${key}"]`)?.getAttribute("content") || "";
+  return globalThis.document?.querySelector(`meta[name="${key}"]`)?.getAttribute("content") || "";
 };
 
-export function confLoader<TKeys extends string>() {
-  const app = parse(getDevKitValue("app"), ",", "=", {
+export function confLoader<TKeys extends string>(alias: string) {
+  const app = parse(getDevKitValue(`${alias}:app`), ",", "=", {
     decodeURIComponent: (v) => v,
   });
 
-  const config = parse(getDevKitValue("config"), ",", "=", {
+  const config = parse(getDevKitValue(`${alias}:config`), ",", "=", {
     decodeURIComponent: (v) => v,
   });
 
